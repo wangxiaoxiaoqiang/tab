@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Document</title>
+<style type="text/css">
+ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}	
+img {
+	vertical-align: top;
+}
+a {
+	text-decoration: none;
+}
+.wrap {
+	margin: 100px auto;
+	position: relative;
+	width: 520px;
+	height: 280px;
+	border: 10px solid #000;
+	overflow: hidden;
+}
+.pics {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 1040px;
+}
+.pics li {
+	float: left;
+	width: 520px;
+}
+.prev,
+.next {
+	position: absolute;
+	top: 120px;
+	width: 40px;
+	height: 40px;
+	background: #ccc;
+	color: #000;
+	font: 16px/40px "宋体";
+	text-align: center;
+	z-index:5;
+}
+.prev {
+	left: 0;
+}
+.next {
+	right: 0;	
+}
+.nav {
+	position: absolute;
+	/*z-index: 2;*/
+	left: 0;
+	width: 100%;
+	bottom: 20px;
+	height: 20px;
+	text-align: center;
+}
+.nav a {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	background: #fff;
+	vertical-align: bottom;
+	border-radius: 50%;
+}
+.nav .active {
+	background: #f60;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+	<ul class="pics">
+		<li>
+			<a href="#1">
+				<img src="img/img1.jpg" />
+			</a>
+		</li>
+		<li>
+			<a href="#2">
+				<img src="img/img2.jpg">
+			</a>
+		</li>
+	</ul>
+	<a href="javascript:;" class="prev">prev</a>
+	<a href="javascript:;" class="next">next</a>
+	<nav class="nav">
+		<a href="javascript:;" class="active"></a>
+		<a href="javascript:;"></a>
+		<a href="javascript:;"></a>
+		<a href="javascript:;"></a>
+	</nav>
+</div>
+<script type="text/javascript" src="tween.js"></script>
+<script type="text/javascript">
+var data = [
+	"img/img1.jpg",
+	"img/img2.jpg",
+	"img/img3.jpg",
+	"img/img4.jpg"
+];	
+window.onload = function(){
+	var pics = document.querySelector('.pics');
+	var img = pics.querySelectorAll('img');
+	var imgW = css(img[0],"width");
+	var prev = document.querySelector('.prev');
+	var next = document.querySelector('.next');
+	var now = 0;//记录当前图片是哪一张,以图片下标来计数
+	var isMove = false;//记录是否在动画
+	var nav=document.getElementsByTagName('a')
+	prev.onclick = function(){//如果图片往右翻，则上一张图片放在第一个图片位置处，当前图片放在第二个图片位置处
+		if(isMove){
+			return;	//如果是在动画，则禁止执行点击事件。
+		}
+			//上张图片的下标是在当前图片下标的基础上减1，当上张图片下标now-1小于0时，则跳转到最后一张图片，否则，依次在当前的基础上递减1
+//		var prev = now-1<0?data.length-1:now-1; //方法一
+		var prev=(now - 1 + data.length)%data.length;    //方法二
+
+		// 找到要显示出来的是第几张
+
+		//我们要做的是一个从左向右的运动，所以当前张要在右侧，要显示出来的这张在左侧
+		img[0].src = data[prev];//要显示出来的这张图片在左侧
+		img[1].src = data[now];//当前的图片在右侧
+		
+		//把要显示出来的左侧图片放到外边距
+		css(pics,"left",-imgW);
+
+		//动画 从左向右移动
+		isMove = true;//说明是在动画。
+		startMove(pics,{left:0},2000,"easeOut",function(){//把要显示出来的图片放在原点位置
+			isMove = false;//动画完成后，记录当前状态不在动画
+		});
+
+		now = prev;//动画完成后，当前图片变为上一张图片。
+		tab();
+	};
+
+	next.onclick = function(){////如果图片往左翻，则当前图片放在第一个图片位置处，下一张图片放在第二个图片位置处，
+		//当点击的时候，要把初始的图片位置状态设置好，然后在startMove动画函数里，对两张图片的大盒子进行左边距的移动
+		if(isMove){
+			return;	//如果是动画，则禁止执行点击事件
+		}
+		var next = (now+1)%data.length; //方法一
+//		var next = now+1>=data.length?0:now+1;  //方法二
+		// 找到要显示出来的是第几张
+
+		//我们要做的是一个从右向左的运动，所以当前张要在左侧，要显示出来的这张在右侧
+		img[0].src = data[now];
+		img[1].src = data[next];
+		
+		//把左侧放到外边距
+		css(pics,"left",0);
+
+		//动画 从右向左移动
+		isMove = true;
+		startMove(pics,{left:-imgW},2000,"easeOut",function(){//对大盒子进行图片移动
+			isMove = false;  //图片动画完成后，说明图片不在运动中，就进行回调函数，设置此时动画的状态是false,再进行底部导航的动画
+				
+		});
+		now = next;//该张图片的动画执行完成后，下一张图片就变成当前图片。
+		tab();
+		
+	};
+	function tab(){  //当前导航的样式设置
+		
+		for(var i=0;i<nav.length;i++){
+			nav[i].className='';
+			
+		}
+		nav[now%nav.length].className="active";//为当前显示的导航添加选中样式
+//		nav[now%nav.length].className = "active";
+	}
+};
+</script>
+</body>
+</html>
